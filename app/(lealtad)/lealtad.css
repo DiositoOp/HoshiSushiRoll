@@ -161,3 +161,6 @@ a:not([class]):hover { text-decoration-color: currentColor; }
 .history > div:last-child { border-bottom: 0; }
 
 .pill.salmon { color: var(--ink); }
+
+/* Acceso a Hoshito desde Mi tarjeta */
+.hoshito-card { flex-direction: row; align-items: center; gap: 14px; text-decoration: none; color: inherit; }

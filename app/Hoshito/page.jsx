@@ -1,9 +1,9 @@
-import { Barlow_Condensed, Fredoka } from 'next/font/google';
+import localFont from 'next/font/local';
 import HoshitoMascot from './HoshitoMascot';
 import './hoshito.css';
 
-const fredoka = Fredoka({ subsets: ['latin'], weight: '700', variable: '--hoshito-title' });
-const barlow = Barlow_Condensed({ subsets: ['latin'], weight: '700', variable: '--hoshito-display' });
+const fredoka = localFont({ src: './jugar/fonts/fredoka-700.woff2', weight: '700', variable: '--hoshito-title', display: 'swap' });
+const barlow = localFont({ src: './jugar/fonts/barlow-condensed-700.woff2', weight: '700', variable: '--hoshito-display', display: 'swap' });
 
 export const metadata = {
   title: 'Hoshito · Hoshi Sushi Roll',

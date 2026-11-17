@@ -2,7 +2,8 @@
 
 import { redirect } from 'next/navigation';
 import { requireRole } from '@/lib/auth';
-import { q } from '@/lib/db';
+import { q, tx } from '@/lib/db';
+import { setAccess } from '@/lib/hoshito';
 import { onlyDigits } from '@/lib/format';
 import { adjustStamps, getRestaurant, logEvent } from '@/lib/rules';
 
@@ -59,4 +60,19 @@ export async function adjustAction(formData) {
   const result = await adjustStamps(id, delta, reason, staff, r);
   if (!result.ok) back(id, result.reason === 'zero' ? 'cero' : 'error');
   back(id, result.reward ? 'premio' : delta > 0 ? 'mas' : 'menos');
+}
+
+export async function hoshitoAction(formData) {
+  const staff = await requireRole(['owner', 'dev']);
+  const r = await getRestaurant();
+  const id = String(formData.get('id'));
+  const on = formData.get('on') === '1';
+  const done = await tx(async (run) => {
+    const [c] = await run('select name from customers where id = $1 and restaurant_id = $2', [id, r.id]);
+    if (!c) return false;
+    await setAccess(run, id, on);
+    await logEvent(run, { restaurantId: r.id, type: 'hoshito', detail: `${c.name} · ${on ? 'acceso dado' : 'acceso quitado'}`, customerId: id, staffId: staff.id });
+    return true;
+  });
+  back(id, done ? (on ? 'hoshito-si' : 'hoshito-no') : 'error');
 }

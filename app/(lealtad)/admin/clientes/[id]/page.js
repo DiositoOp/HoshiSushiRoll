@@ -6,7 +6,7 @@ import { dayAndClock, daysAgo, prettyPhone } from '@/lib/format';
 import { getRestaurant } from '@/lib/rules';
 import StaffHeader from '@/components/StaffHeader';
 import { Stamps } from '@/components/ui';
-import { adjustAction } from './actions';
+import { adjustAction, hoshitoAction } from './actions';
 import ProfileForm from './ProfileForm';
 
 const AVISOS = {
@@ -17,6 +17,8 @@ const AVISOS = {
   cero: ['', 'No tiene sellos que quitar.'],
   motivo: ['', 'Escribe el motivo del ajuste (por ejemplo: "sello de más por error").'],
   error: ['', 'No se pudo hacer el ajuste. Intenta de nuevo.'],
+  'hoshito-si': ['green', 'Ahora tiene acceso a Hoshito. Le regalamos un giro de bienvenida.'],
+  'hoshito-no': ['green', 'Se le quitó el acceso a Hoshito. Su progreso se queda guardado.'],
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,6 +33,7 @@ const HISTORY_LABEL = {
   ajuste: 'Corrección',
   edicion: 'Datos editados',
   bloqueado: 'Sello bloqueado',
+  hoshito: 'Hoshito',
 };
 
 export default async function ClienteDetalle({ params, searchParams }) {
@@ -44,6 +47,8 @@ export default async function ClienteDetalle({ params, searchParams }) {
   const notice = AVISOS[aviso];
 
   const [{ n: rewards }] = await q('select count(*)::int as n from rewards where customer_id = $1 and delivered_at is null', [c.id]);
+  const [pet] = await q('select state, updated_at from hoshito_pets where customer_id = $1', [c.id]);
+  const [{ n: spins }] = await q('select count(*)::int as n from hoshito_spins where customer_id = $1 and opened_at is null', [c.id]);
   const history = await q(
     `select e.at, e.type, e.detail, s.name as staff_name from events e left join staff s on s.id = e.staff_id
       where e.customer_id = $1 order by e.at desc limit 15`,
@@ -74,6 +79,26 @@ export default async function ClienteDetalle({ params, searchParams }) {
         {rewards > 0 && <span className="pill salmon" style={{ alignSelf: 'flex-start' }}>Tiene {rewards === 1 ? 'un premio' : `${rewards} premios`} por entregar</span>}
       </div>
 
+      <form action={hoshitoAction} className="card">
+        <div className="row">
+          <h2 className="display h2">Hoshito</h2>
+          <span className={`pill${c.hoshito_access ? ' green' : ''}`}>{c.hoshito_access ? 'Con acceso' : 'Sin acceso'}</span>
+        </div>
+        <p className="small muted">
+          La mascota virtual es solo para la comunidad cercana: clientes muy frecuentes, el equipo y amigos.
+          Con acceso, cada sello confirmado en caja le da un giro de la ruleta de Hoshito.
+        </p>
+        {c.hoshito_access && (
+          <p className="small">
+            {pet?.state?.level ? `Nivel ${pet.state.level} · ` : 'Aún no abre el juego · '}
+            {spins === 1 ? '1 giro por usar' : `${spins} giros por usar`}
+          </p>
+        )}
+        <input type="hidden" name="id" value={c.id} />
+        <input type="hidden" name="on" value={c.hoshito_access ? '0' : '1'} />
+        <button className={`btn${c.hoshito_access ? ' quiet' : ''}`} type="submit">{c.hoshito_access ? 'Quitar acceso a Hoshito' : 'Dar acceso a Hoshito'}</button>
+      </form>
+
       <form action={adjustAction} className="card">
         <h2 className="display h2">Corregir sellos</h2>
         <p className="small muted">Úsalo si caja se equivocó. No cuenta como visita y queda registrado con tu nombre.</p>
@@ -98,7 +123,7 @@ export default async function ClienteDetalle({ params, searchParams }) {
             <div key={i}>
               <span>
                 <strong>{HISTORY_LABEL[e.type] || e.type}</strong>
-                {e.type === 'ajuste' || e.type === 'edicion' ? <span className="muted"> · {e.detail.split(' · ').slice(1).join(' · ')}</span> : null}
+                {e.type === 'ajuste' || e.type === 'edicion' || e.type === 'hoshito' ? <span className="muted"> · {e.detail.split(' · ').slice(1).join(' · ')}</span> : null}
                 {e.staff_name ? <span className="muted"> · {e.staff_name}</span> : null}
               </span>
               <span className="muted" style={{ whiteSpace: 'nowrap' }}>{dayAndClock(e.at, r.tz)}</span>

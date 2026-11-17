@@ -44,6 +44,11 @@ export default async function MiTarjeta({ searchParams }) {
     [c.id],
   );
 
+  let hoshitoSpins = 0;
+  if (c.hoshito_access) {
+    [{ n: hoshitoSpins }] = await q('select count(*)::int as n from hoshito_spins where customer_id = $1 and opened_at is null', [c.id]);
+  }
+
   const firstName = c.name.split(' ')[0];
   const left = r.stamps_goal - c.stamps;
   const showReview = r.google_review_url && c.total_visits >= r.review_from_visit;
@@ -105,6 +110,22 @@ export default async function MiTarjeta({ searchParams }) {
           {left === 1 ? 'Te falta 1 visita' : `Te faltan ${left} visitas`} para {r.reward_label.toLowerCase()}.
         </span>
       </div>
+
+      {c.hoshito_access && (
+        <Link className="card dark hoshito-card" href="/Hoshito/jugar">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" width={52} height={52} className="logo" />
+          <span className="stack" style={{ gap: 2, flex: 1 }}>
+            <span className="display h2">Hoshito te espera</span>
+            <span className="small muted">
+              {hoshitoSpins > 0
+                ? `Tienes ${hoshitoSpins === 1 ? '1 giro' : `${hoshitoSpins} giros`} de la ruleta por usar`
+                : 'Cuídalo, juega y gana premios con cada visita'}
+            </span>
+          </span>
+          {hoshitoSpins > 0 && <span className="tab-badge" style={{ position: 'static' }}>{hoshitoSpins}</span>}
+        </Link>
+      )}
 
       {showReview && !pending && (
         <div className="card">
