@@ -14,6 +14,8 @@ Un solo sitio para todo Hoshi: la web informativa y el sistema de sellos, en el 
 | `/caja` | Pantalla del cajero |
 | `/admin` | Panel del dueño (Resumen, Clientes, Promoción) |
 | `/dev` | Consola del desarrollador |
+| `/Hoshito` | Página pública de la mascota |
+| `/Hoshito/jugar` | Juego de Hoshito, solo para la comunidad con acceso (ver `HOSHITO.md`) |
 
 Google solo indexa la web (`/` y `/menu`); las pantallas de la tarjeta y del personal quedan fuera de los buscadores.
 
